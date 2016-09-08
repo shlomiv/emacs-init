@@ -757,6 +757,7 @@
    #+BEGIN_SRC emacs-lisp :exports code :results silent
      (global-set-key (kbd "C-x C-b") 'ibuffer)
    #+END_SRC
+** TODO Store Link
 * Org-mode
   Lets set up org-mode!
   #+BEGIN_SRC emacs-lisp

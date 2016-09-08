@@ -6,7 +6,6 @@
 
 ;; init.el for this setup. Must use Emacs 24
 (org-babel-load-file
- (expand-file-name "emacs-init.org"
-		  "~/shlomi-emacs"))
+ (expand-file-name "emacs-init.org" "."))
 
 (add-to-list 'custom-theme-load-path "~/.emacs.d/themes/")
