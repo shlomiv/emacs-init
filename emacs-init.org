@@ -1,5 +1,6 @@
 #+Title: Emacs init file
 #+Author: Shlomi Vaknin
+
 * config                                                       :noexport:
   #+LANGUAGE:  en
   #+OPTIONS:   H:10 toc:t num:2
@@ -43,6 +44,16 @@
                          (fundamental-mode)))))
 
  
+  #+END_SRC
+
+  So, after not being fully satisfied with the above solution, I managed to find a [[http://emacs.stackexchange.com/a/2555/6847][much better
+  solution]]:
+  #+BEGIN_SRC emacs-lisp :exports code :results silent
+  (setq-default major-mode
+              (lambda () (if buffer-file-name
+                          (fundamental-mode)
+                            (let ((buffer-file-name (buffer-name)))
+                          (set-auto-mode)))))
   #+END_SRC
 
 * Network                                                           :Network:
@@ -428,12 +439,30 @@
        :bind (("M-g o" . shlomi/linum-off-mode)
               ("M-g l" . shlomi/linum-new-mode)))
    #+END_SRC
+** Pretty Mode-line
+   [[http://emacs.stackexchange.com/questions/281/how-do-i-get-a-fancier-mode-line-that-uses-solid-colors-and-triangles][To really be fancy]], lets play around with =powerline= and later maybe some =smart-mode-line=
+*** COMMENT Powerline
+    #+BEGIN_SRC emacs-lisp :exports code :results silent
+      (use-package powerline
+        :ensure t
+        :config (progn
+                  (setq powerline-arrow-shape 'arrow)))
+    #+END_SRC
+*** Smart-mode-line
+    #+BEGIN_SRC emacs-lisp :exports code :results silent
+      (use-package smart-mode-line
+        :ensure t
+        :config (sml/setup))
+
+      (use-package smart-mode-line-powerline-theme
+        :ensure t)
+    #+END_SRC
 * Emacs-lisp
   Well, =Prelude= is in fact quite a nice emacs distribution, and so I shamelessly grabbed some
   stuff from it! The following functions are from prelude's emacs-lisp module.
 
   #+BEGIN_SRC emacs-lisp :exports code :results silent
-    (shlomi/buffer-name->major-mode  "\\.el\\'"  (emacs-lisp-mode))
+    ;;(shlomi/buffer-name->major-mode  "\\.el\\'"  (emacs-lisp-mode))
 
     (define-key emacs-lisp-mode-map (kbd "C-c C-c") 'eval-defun)
     (define-key emacs-lisp-mode-map (kbd "C-c C-b") 'eval-buffer)
@@ -454,8 +483,7 @@
    Lets set up [[https://github.com/clojure-emacs/cider][cider]] which is an awesome, fully-featured clojure ide in emacs.
    #+BEGIN_SRC emacs-lisp
      (use-package cider
-       :ensure t
-       :config (shlomi/buffer-name->major-mode  "\\.clj\\'"  (cider-mode)))
+       :ensure t)
    #+END_SRC
 
 ** Flash executed s-exp
@@ -757,20 +785,38 @@
    #+BEGIN_SRC emacs-lisp :exports code :results silent
      (global-set-key (kbd "C-x C-b") 'ibuffer)
    #+END_SRC
-** TODO Store Link
+** Browse kill ring
+   Emacs has not one clipboard, but a whole circular list of them, named ring. After you yank
+   (paste) from the clipboard using =C-y=, you could use =M-y= to circularly rotate between items in
+   the kill-ring. Occasionally it is convenient to browse that kill ring.
+
+          :bind (:map browse-kill-ring-mode-map
+                   ("C-g" . browse-kill-ring-quit))
+
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
+     (use-package browse-kill-ring
+       :ensure t
+       :config (progn
+                 (browse-kill-ring-default-keybindings)
+                 (setq browse-kill-ring-highlight-current-entry t)))
+   #+END_SRC
 * Org-mode
   Lets set up org-mode!
   #+BEGIN_SRC emacs-lisp
-    (use-package org
-      :config (progn
-      	  ;; I rather have this key-binding do something else for now.
-      	  ;; It used to cycle agenda files
-      	  (define-key org-mode-map (kbd "C-," ) nil)
-
-      	  ;; Lets start org-mode major mode for every buffer that ends with .org
-      	  (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode)))
-      :bind (("C-c a" . org-agenda)
-             ("C-x C-n" . org-capture)))
+        (use-package org
+          :config (progn
+                    ;; I rather have this key-binding do something else for now.
+                    ;; It used to cycle agenda files
+                    (define-key org-mode-map (kbd "C-," ) nil)
+            
+                    ;; Lets start org-mode major mode for every buffer that ends with .org
+                    (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode)))
+          :bind (("C-c a" . org-agenda)
+                 ("C-x C-n" . org-capture)
+                 ("\C-cl"   . org-store-link)
+                 ("\C-ca"   . org-agenda)
+                 ("\C-cb"   . org-iswitchb)
+    ))
   #+END_SRC
 
 ** Babel
@@ -932,3 +978,5 @@
          (insert " ")
          (insert ip)))
    #+END_SRC
+** Example
+   
