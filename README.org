@@ -1,1 +1,4 @@
-* org-init
+* Org-init
+  My entire emacs configuration, in =org-mode= format.
+
+  Please see [[file:emacs-init.org][the org file]]
