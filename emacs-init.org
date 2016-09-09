@@ -1,6 +1,5 @@
 #+Title: Emacs init file
 #+Author: Shlomi Vaknin
-
 * config                                                       :noexport:
   #+LANGUAGE:  en
   #+OPTIONS:   H:10 toc:t num:2
@@ -10,6 +9,7 @@
 
   #+HTML_HEAD: <script> var HS_STARTUP_FOLDED = true; </script>
  
+
 * Introduction
   Up until now I always used some /ready recipe/ for emacs, be it =Prelude=, =Emacs-live= or
   =Spacemacs=. All of them are awesome in their own way, but I really wanted my very own emacs
@@ -252,17 +252,15 @@
        :ensure t
        :config
        (progn
-         (ido-mode t)
+         ;;(ido-mode t)
          (ido-everywhere)
-         (with-eval-after-load 'ido
-           (setq ido-use-faces 't)
-           (custom-set-faces
-            '(ido-subdir 
-              ((t (:foreground "LightGreen")))) ;; Face used by ido for highlighting subdirs in the alternatives.
-            '(ido-first-match ((t (:foreground "Darkolivegreen3")))) ;; Face used by ido for highlighting first match.
-            '(ido-only-match ((t (:foreground "#ffcc33")))) ;; Face used by ido for highlighting only match.
-            '(ido-indicator ((t (:foreground "#ffffff")))) ;; Face used by ido for highlighting its indicators (don't actually use this)
-            '(ido-incomplete-regexp ((t (:foreground "#ffffff"))))))
+         (setq ido-use-faces 't)
+         (custom-set-faces
+          '(ido-subdir ((t (:foreground "LightGreen")))) ;; Face used by ido for highlighting subdirs in the alternatives.
+          '(ido-first-match ((t (:foreground "Darkolivegreen3")))) ;; Face used by ido for highlighting first match.
+          '(ido-only-match ((t (:foreground "#ffcc33")))) ;; Face used by ido for highlighting only match.
+          '(ido-indicator ((t (:foreground "#ffffff")))) ;; Face used by ido for highlighting its indicators (don't actually use this)
+          '(ido-incomplete-regexp ((t (:foreground "#ffffff")))))
          (setq ido-enable-flex-matching t)
          (setq ido-use-filename-at-point 'guess)))
    #+END_SRC
@@ -532,24 +530,6 @@
                   (string-match ".*nrepl.*" (buffer-name x)))
                 (buffer-list))))
    #+END_SRC
-* Paredit
-  Well smartparens really..
-  
-  Seriously, this is important. I will be using smartparens instead of
-  paredit, but set the default configuration fo be identical to
-  paredit.
-
-  This package lets you work with parenthesis in a very structured
-  way, without loosing your mind! yay for that!
-  #+BEGIN_SRC emacs-lisp
-    (use-package smartparens
-    :ensure t
-    :config (progn
-    	  (sp-use-paredit-bindings)
-    	  (add-to-list 'sp-ignore-modes-list 'org-mode)
-    	  (smartparens-global-strict-mode 1)))
-  #+END_SRC
-
 * Conveniences
   Once you are used to some way of working, changing the habits is
   quite hard and not always truely justified. In this section I will
@@ -605,6 +585,24 @@
      (use-package expand-region
        :ensure t
        :bind (("C-=". er/expand-region)))
+   #+END_SRC
+
+** Paredit
+   Well smartparens really..
+  
+   Seriously, this is important. I will be using smartparens instead of
+   paredit, but set the default configuration fo be identical to
+   paredit.
+
+   This package lets you work with parenthesis in a very structured
+   way, without loosing your mind! yay for that!
+   #+BEGIN_SRC emacs-lisp
+     (use-package smartparens
+     :ensure t
+     :config (progn
+    	   (sp-use-paredit-bindings)
+    	   (add-to-list 'sp-ignore-modes-list 'org-mode)
+    	   (smartparens-global-strict-mode 1)))
    #+END_SRC
 
 ** Crux
@@ -685,13 +683,12 @@
      (use-package multiple-cursors
        :ensure t
        :bind (("C-;" . mc/mark-all-like-this)
-   	   ("C-<" . mc/mark-previous-like-this)
-   	   ("C->" . mc/mark-next-like-this)
-   	   ("C-\"". mc/edit-lines))
-       )
+              ("C-<" . mc/mark-previous-like-this)
+              ("C->" . mc/mark-next-like-this)
+              ("C-\"". mc/edit-lines)))
    #+END_SRC
 ** Yes or No shortcut
-   Because why type 3 chars when you can type 1?
+   Because why type three letters when you can type one??
    #+BEGIN_SRC emacs-lisp
    (defalias 'yes-or-no-p 'y-or-n-p)
    #+END_SRC
@@ -978,5 +975,4 @@
          (insert " ")
          (insert ip)))
    #+END_SRC
-** Example
-   
+
