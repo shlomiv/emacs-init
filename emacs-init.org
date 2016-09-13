@@ -9,7 +9,7 @@
 
   #+HTML_HEAD: <script> var HS_STARTUP_FOLDED = true; </script>
  
-
+  
 * Introduction
   Up until now I always used some /ready recipe/ for emacs, be it =Prelude=, =Emacs-live= or
   =Spacemacs=. All of them are awesome in their own way, but I really wanted my very own emacs
@@ -27,7 +27,7 @@
   In this section I will put things that truely belong everywhere for themselves, such as this
   =comment= macro.
 
-  #+BEGIN_SRC emacs-lisp 
+  #+BEGIN_SRC emacs-lisp :exports code :results silent
     (defmacro comment (&rest body)
     "Comment out one or more s-expressions."
     nil)
@@ -63,8 +63,9 @@
 
 ** Proxy settings                                                     :Proxy:
    Set up proxy configuration for use in intel network. 
-  
-   #+BEGIN_SRC emacs-lisp
+   
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
+
      ;; Interactively enable/disable intel proxy
      (defun shlomi/intel-proxy-enable ()
        (interactive)
@@ -82,6 +83,23 @@
    Need to find a way to quickly tell if I am in an intel network.
    #+END_tip
 
+   +Here is a simple attempt to see if I am on an intel network - check+
+   +the hostname (need to see if this works in all cases)+
+
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
+   (comment
+     (defun shlomi/on-intel-network-p ()
+       (string-suffix-p "intel.com" system-name)))
+   #+END_SRC
+
+   That hostname option did not work well. Instead lets try to see if the proxy address gets
+   resolved to any ip - if it does, we are on an intel network.
+
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
+     ;; if host is found, the process returns 0, if it does not, it returns 1
+     (defun shlomi/on-intel-network-p ()
+       (zerop (call-process-shell-command "host proxy-us.intel.com")))
+   #+END_SRC
 
 ** Tramp                                                              :tramp:
    [[https://www.emacswiki.org/emacs/TrampMode][Tramp]] is one of the most powerful packages in emacs. It allows you to work on remote hosts as if
@@ -89,7 +107,7 @@
    machines, working on their remot git through =magit=, and all as if they were local. Its a much
    more elegant idiom in my eyes than the tmux/vi combo, although it too has much merit.
    
-   #+BEGIN_SRC emacs-lisp
+     #+BEGIN_SRC emacs-lisp :exports code :results silent
      (require 'tramp)
 
      ;;; tramp defaults
@@ -108,7 +126,7 @@
    It is especially convenient to have tramp parse =~/.ssh/config= file. This way you could access
    your servers just as you would by using =ssh= command, without having to specify all the
    connection parameters every time.
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
      ;; Configure tramp to use ssh and parse .ssh/config file for convenience
      (tramp-set-completion-function "ssh"
       '((tramp-parse-sconfig "/etc/ssh_config")
@@ -117,7 +135,7 @@
 
    In order to identify where the file that we are editing is at, lets add to the mode-line a field
    that show us the hostname of the file's location, if its remote.
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
      ;;; Status bar mods - if a file is remote, show where its at on the status bar
      (defconst my-mode-line-buffer-identification
        (list
@@ -151,10 +169,10 @@
   Lets configure the packages we are about to use. Note how I commented =melpa= out, that is because
   I got hurt too many times by unstable packages. Also, I intend to remove marmalade, since I only
   Use It For =auto-highlight-symbol=.
-  #+BEGIN_SRC emacs-lisp
+  #+BEGIN_SRC emacs-lisp :exports code :results silent
     (require 'package)
     (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/") t)
-    ;; (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
+    (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
     (add-to-list 'package-archives '("melpa-stable" . "http://stable.melpa.org/packages/") t)
     (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
     (add-to-list 'package-archives '("marmalade" . "https://marmalade-repo.org/packages/"))
@@ -163,14 +181,16 @@
   #+END_SRC
 
   And lets set up proxy. This needs to somehow be conditioned on whether a proxy is needed or not.
-  #+BEGIN_SRC emacs-lisp
-  (shlomi/intel-proxy-enable)
+  #+BEGIN_SRC emacs-lisp :exports code :results silent
+    (when (shlomi/on-intel-network-p)
+      (message "On an intel network, enabling proxy")
+      (shlomi/intel-proxy-enable))
   #+END_SRC
 
   And lets now install =use-package= and configure what we can through it! Time to learn!  An
   important note about =use-package=, when you specify =:ensure t=, it downloads it from the repos
   and installs the package for you!
-  #+BEGIN_SRC emacs-lisp
+  #+BEGIN_SRC emacs-lisp :exports code :results silent
     (unless (package-installed-p 'use-package)
       (package-refresh-contents)
       (package-install 'use-package))
@@ -188,7 +208,7 @@
      - =:bind= - a shortcut to define local and global keybindings
    
    Install zenburn theme from repo and activate it.
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
      (use-package zenburn-theme
        :ensure t
        :config (load-theme 'zenburn t))
@@ -247,16 +267,17 @@
    allows for a more interactive experience.
 
    Install it and activate it all over
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
      (use-package ido
        :ensure t
        :config
        (progn
-         ;;(ido-mode t)
+         (ido-mode t)
          (ido-everywhere)
          (setq ido-use-faces 't)
          (custom-set-faces
-          '(ido-subdir ((t (:foreground "LightGreen")))) ;; Face used by ido for highlighting subdirs in the alternatives.
+          '(ido-subdir 
+            ((t (:foreground "LightGreen")))) ;; Face used by ido for highlighting subdirs in the alternatives.
           '(ido-first-match ((t (:foreground "Darkolivegreen3")))) ;; Face used by ido for highlighting first match.
           '(ido-only-match ((t (:foreground "#ffcc33")))) ;; Face used by ido for highlighting only match.
           '(ido-indicator ((t (:foreground "#ffffff")))) ;; Face used by ido for highlighting its indicators (don't actually use this)
@@ -268,7 +289,7 @@
 *** Ido vertical mode
     [[https://github.com/creichert/ido-vertical-mode.el][Ido vertical mode]] makes the list vertical rather than the default horisontal layout. This makes
     it much more readable and easy to navigate.
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
         (use-package ido-vertical-mode
 	  :ensure t
           :config (progn
@@ -276,12 +297,15 @@
    	      (setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)))
    #+END_SRC
    
+   #+RESULTS:
+   : t
+
 *** ido ubiquitous
     /Does what =ido-everywhere= is supposed to do/
 
     This actually turns everything that is /auto-compleatable/ into an ido list. For example
     =cider-connect= now shows hosts and ports interactively.
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :exports code :results silent
       (use-package ido-ubiquitous
         :ensure t
         :config (ido-ubiquitous-mode 1))
@@ -304,7 +328,7 @@
    adding this package locally..
    #+END_TIP
    
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
      (use-package auto-highlight-symbol
        :ensure t
        :config (progn
@@ -354,7 +378,7 @@
 ** Control text scaling
    Often times we would like to quickly increase or decrease font size
    in buffer. I like it to be bound to =C-+= and =C--=
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
      (global-set-key (kbd "C-+") 'text-scale-increase)
      (global-set-key (kbd "C--") 'text-scale-decrease)
    #+END_SRC
@@ -479,7 +503,7 @@
   makes for the bestestest experience like EVER! :D
 ** Install Cider
    Lets set up [[https://github.com/clojure-emacs/cider][cider]] which is an awesome, fully-featured clojure ide in emacs.
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
      (use-package cider
        :ensure t)
    #+END_SRC
@@ -488,7 +512,7 @@
   Its always very convenient to have some visual feedback when you
   execute a clojure s-exp, lets set it up with this:
 
-  #+BEGIN_SRC emacs-lisp
+  #+BEGIN_SRC emacs-lisp :exports code :results silent
     (use-package cider-eval-sexp-fu
       :ensure t
       :config (setq eval-sexp-fu-flash-duration 0.5))
@@ -496,7 +520,7 @@
   
 ** Prettify lambdas
   Makes some things look prettier 
-  #+BEGIN_SRC emacs-lisp
+  #+BEGIN_SRC emacs-lisp :exports code :results silent
     (defun lambda-as-lambda (mode ch pattern)
       (font-lock-add-keywords
        mode `((,pattern
@@ -530,6 +554,22 @@
                   (string-match ".*nrepl.*" (buffer-name x)))
                 (buffer-list))))
    #+END_SRC
+** Refactor clojure
+   clj-refactor adds some really neat refactor functionality to clojure. Its quite
+   impressive. However, I never really used it so maybe I should check it out..
+   
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
+     (comment (use-package clj-refactor
+                :ensure t
+                :config (progn
+                          (clj-refactor-mode 1)
+                          (cljr-add-keybindings-with-prefix "C-c C-SPC"))))
+   #+END_SRC
+
+   #+BEGIN_warning
+   I would use this, but my god! This imports a gazillion packages!! removed!
+   #+END_warning
+
 * Conveniences
   Once you are used to some way of working, changing the habits is
   quite hard and not always truely justified. In this section I will
@@ -539,7 +579,7 @@
    I am used to having =C-w= kill the current line and not current
    region! Lets fix this by having both operations: If a region is
    active, kill it, otherwise kill current line:
-  #+BEGIN_SRC emacs-lisp
+  #+BEGIN_SRC emacs-lisp :exports code :results silent
     (defun shlomi/kill-whole-line (&optional arg)
       "Copied from prelude:
        A simple wrapper around command `kill-whole-line' that respects indentation.
@@ -557,7 +597,7 @@
   #+END_SRC
 
   And of couese, lets bind it:
-  #+BEGIN_SRC emacs-lisp
+  #+BEGIN_SRC emacs-lisp :exports code :results silent
   ;; conveniently kill region if one is active, if not, simply kill current line
   (global-set-key (kbd "C-w")   'shlomi/kill-line-or-region)
   #+END_SRC
@@ -571,7 +611,7 @@
    [[https://github.com/leoliu/easy-kill][Easy-kill]] is a package that helps us control killing/marking etc.
 
    Lets install and set up easy-kill
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
      (use-package easy-kill
        :ensure t
        :config (global-set-key [remap kill-ring-save] 'easy-kill))
@@ -581,7 +621,7 @@
    Super convenient tool to gradually expand a selection.
 
    Install and set up:
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
      (use-package expand-region
        :ensure t
        :bind (("C-=". er/expand-region)))
@@ -596,7 +636,7 @@
 
    This package lets you work with parenthesis in a very structured
    way, without loosing your mind! yay for that!
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
      (use-package smartparens
      :ensure t
      :config (progn
@@ -608,16 +648,17 @@
 ** Crux
    [[https://github.com/bbatsov/crux][Crux]] is a package containing many useful features, such as opening
    recent files, reopening files as root, etc.
-      #+BEGIN_SRC emacs-lisp
-     (use-package crux
-       :ensure t
-       :bind (("s-r" . crux-recentf-ido-find-file)))
+      #+BEGIN_SRC emacs-lisp :exports code :results silent
+        (use-package crux
+          :ensure t
+          :bind (("s-r" . crux-recentf-ido-find-file)
+                 ("C-a" . crux-move-beginning-of-line)))
    #+END_SRC
 
 *** Recent files
     In order to get recent files working, we would need get package =recentf=:
     
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :exports code :results silent
       (use-package recentf
         :ensure t
         :config (progn
@@ -628,7 +669,7 @@
 
 ** Windmove - Move between open windows with shift
    Use shift+arrows to navigate between windows. Note, this does not work in org files!
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
      (use-package windmove
        :config (when (fboundp 'windmove-default-keybindings)
       	   (windmove-default-keybindings)))
@@ -637,7 +678,7 @@
 ** Add ace-window for easier window navigation
    Another way to navigate between windows, using ace-window. It
    numbers each window and lets you select the one you like
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
      (use-package ace-window
        :ensure t
        :bind (("s-w" . ace-window)))
@@ -645,7 +686,7 @@
 
 ** avy navigation
    [[https://github.com/abo-abo/avy][avy package]] allows easy navigation for many things
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
      (use-package avy
        :ensure t
        :bind (
@@ -663,7 +704,7 @@
 
 ** Company mode - autocomplete engine
    Complete anything
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
      (use-package company
        :ensure t
        :config (global-company-mode))
@@ -672,14 +713,14 @@
 
 ** Smart M-x, aka. smex
    shows possible emacs commands when hitting =M-x=
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
      (use-package smex
        :ensure t
        :bind (("M-x" . smex)))
    #+END_SRC
 
 ** Multiple cursors
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
      (use-package multiple-cursors
        :ensure t
        :bind (("C-;" . mc/mark-all-like-this)
@@ -689,18 +730,18 @@
    #+END_SRC
 ** Yes or No shortcut
    Because why type three letters when you can type one??
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
    (defalias 'yes-or-no-p 'y-or-n-p)
    #+END_SRC
 ** Delete highlighted text
    I often mark a region that I'd like to replace, this could be enabled via:
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
    (delete-selection-mode 1)
    #+END_SRC
 
 ** Projectile
    This package gets us a =project= context
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
      (use-package projectile
        :ensure t
        :config (projectile-global-mode))
@@ -799,7 +840,7 @@
    #+END_SRC
 * Org-mode
   Lets set up org-mode!
-  #+BEGIN_SRC emacs-lisp
+  #+BEGIN_SRC emacs-lisp :exports code :results silent
         (use-package org
           :config (progn
                     ;; I rather have this key-binding do something else for now.
@@ -808,12 +849,11 @@
             
                     ;; Lets start org-mode major mode for every buffer that ends with .org
                     (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode)))
-          :bind (("C-c a" . org-agenda)
+          :bind (("C-c a"   . org-agenda)
                  ("C-x C-n" . org-capture)
                  ("\C-cl"   . org-store-link)
                  ("\C-ca"   . org-agenda)
-                 ("\C-cb"   . org-iswitchb)
-    ))
+                 ("\C-cb"   . org-iswitchb)))
   #+END_SRC
 
 ** Babel
@@ -911,7 +951,7 @@
    #+END_SRC
 
 ** Custom block shortcuts
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
      (add-to-list 'org-structure-template-alist '("elr" "#+BEGIN_SRC emacs-lisp :exports results\n?\n#+END_SRC" "<src lang=\"?\">\n\n</src>"))
      (add-to-list 'org-structure-template-alist '("elc" "#+BEGIN_SRC emacs-lisp :exports code :results silent\n?\n#+END_SRC" "<src lang=\"?\">\n\n</src>"))
      (add-to-list 'org-structure-template-alist '("clj" "#+BEGIN_SRC clojure ?\n\n#+END_SRC" "<src lang=\"?\">\n\n</src>"))
@@ -934,6 +974,25 @@
 
      (advice-add 'org-transpose-element :around #'revert-to-transpose-words)
    #+END_SRC
+** Beginning of line                                                 :Advice:
+   When moving to beginning of line =C-a=, it is often very convenient to first move to the first
+   non-whitespace char in the line. It works elsewhere, lets add this functionality to org-mode as
+   well
+
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
+     (defun toggle-beginning-of-line (orig-fun &rest args)
+       "Move back to indentation first, then to beginning of line"
+       (let ((initial-position (point)))
+         (apply orig-fun args)
+         (when (looking-at-p "^ +")
+           (when (equal initial-position
+                        (progn (back-to-indentation)
+                               (point)))
+             (beginning-of-line)))))
+
+     (advice-add 'org-beginning-of-line :around #'toggle-beginning-of-line)
+   #+END_SRC
+
 ** TODO Integrating with smartparens
    Org-mode does not play very well with lets, smartparens try to manually bind the useful stuff.
    Need to find a way to only enable parenthesis insertion withough any special key-bindings..
@@ -976,3 +1035,7 @@
          (insert ip)))
    #+END_SRC
 
+** vimgolf
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
+     (use-package vimgolf :ensure t)
+   #+END_SRC
