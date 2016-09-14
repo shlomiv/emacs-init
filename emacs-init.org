@@ -833,19 +833,19 @@
 * Org-mode
   Lets set up org-mode!
   #+BEGIN_SRC emacs-lisp :exports code :results silent
-        (use-package org
-          :config (progn
-                    ;; I rather have this key-binding do something else for now.
-                    ;; It used to cycle agenda files
-                    (define-key org-mode-map (kbd "C-," ) nil)
-            
-                    ;; Lets start org-mode major mode for every buffer that ends with .org
-                    (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode)))
-          :bind (("C-c a"   . org-agenda)
-                 ("C-x C-n" . org-capture)
-                 ("\C-cl"   . org-store-link)
-                 ("\C-ca"   . org-agenda)
-                 ("\C-cb"   . org-iswitchb)))
+    (use-package org
+      :config (progn
+                ;; I rather have this key-binding do something else for now.
+                ;; It used to cycle agenda files
+                (define-key org-mode-map (kbd "C-," ) nil)
+
+                ;; Lets start org-mode major mode for every buffer that ends with .org
+                (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode)))
+      :bind (("C-c a"   . org-agenda)
+             ("C-x C-n" . org-capture)
+             ("\C-cl"   . org-store-link)
+             ("\C-ca"   . org-agenda)
+             ("\C-cb"   . org-iswitchb)))
   #+END_SRC
 
 ** Babel
@@ -1056,7 +1056,7 @@
 
 ** Eshell configuration
    #+BEGIN_SRC emacs-lisp :exports code :results silent
-     (defun eshell-quit ()
+     (defun eshell/x ()
        (insert "exit")
        (eshell-send-input)
        (delete-window))
@@ -1067,7 +1067,7 @@
      directory to make multiple eshell windows easier."
        (interactive)
        (if (eq (with-current-buffer (current-buffer) major-mode) 'eshell-mode)
-           (eshell-quit)
+           (eshell/x)
            (let* ((parent (if (buffer-file-name)
                               (file-name-directory (buffer-file-name))
                             default-directory))
