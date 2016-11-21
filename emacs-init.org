@@ -118,7 +118,8 @@
      (setq password-cache-expiry nil)
 
      ;; remote path 
-     (add-to-list 'tramp-remote-path "/home/vaknins9/")
+     (add-to-list 'tramp-remote-path "/home/vaknins9/" "/home/vaknins9/bin")
+     (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
 
      (set-default 'tramp-default-proxies-alist (quote ((".*" "\\`root\\'" "/ssh:%h:"))))
    #+END_SRC
@@ -172,7 +173,7 @@
   #+BEGIN_SRC emacs-lisp :exports code :results silent
     (require 'package)
     (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/") t)
-    (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
+    ;;(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
     (add-to-list 'package-archives '("melpa-stable" . "http://stable.melpa.org/packages/") t)
     (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
     (add-to-list 'package-archives '("marmalade" . "https://marmalade-repo.org/packages/"))
@@ -260,8 +261,15 @@
      (add-hook 'prog-mode-hook 'shlomi/highlight-words)
      (add-hook 'lisp-mode-hook 'shlomi/highlight-words)
      (add-hook 'lisp-interaction-mode-hook 'shlomi/highlight-words)
+     (add-hook 'org-mode-hook 'shlomi/highlight-words)
    #+END_SRC
 
+   
+** Highlight current line
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
+   (global-hl-line-mode 1)
+   (set-face-background 'hl-line  "#324d4d")
+   #+END_SRC
 ** Interactively Do Things (ido)                                        :ido:
    [[https://www.emacswiki.org/emacs/InteractivelyDoThings][Ido]] is a comprehensive packge used to produce and utilize "auto-complete" suggestions which
    allows for a more interactive experience.
@@ -504,7 +512,6 @@
      (use-package cider
        :ensure t)
    #+END_SRC
-
 ** Prettify lambdas
   Makes some things look prettier 
   #+BEGIN_SRC emacs-lisp :exports code :results silent
@@ -546,11 +553,11 @@
    impressive. However, I never really used it so maybe I should check it out..
    
    #+BEGIN_SRC emacs-lisp :exports code :results silent
-     (comment (use-package clj-refactor
-                :ensure t
-                :config (progn
-                          (clj-refactor-mode 1)
-                          (cljr-add-keybindings-with-prefix "C-c C-SPC"))))
+     (use-package clj-refactor
+       :ensure t
+       :config (progn
+                 (clj-refactor-mode 1)
+                 (cljr-add-keybindings-with-prefix "C-c C-SPC")))
    #+END_SRC
 
    #+BEGIN_warning
@@ -623,14 +630,29 @@
 
    This package lets you work with parenthesis in a very structured
    way, without loosing your mind! yay for that!
+
    #+BEGIN_SRC emacs-lisp :exports code :results silent
      (use-package smartparens
      :ensure t
      :config (progn
-    	   (sp-use-paredit-bindings)
-    	   (add-to-list 'sp-ignore-modes-list 'org-mode)
-    	   (smartparens-global-strict-mode 1)))
+           (sp-use-paredit-bindings)
+           (add-to-list 'sp-ignore-modes-list 'org-mode)
+           (smartparens-global-strict-mode 1)
+
+           (sp-with-modes 'clojure-mode
+             ;; disable ', it's the quote character!
+             (sp-local-pair "'" nil :actions nil)
+             (sp-local-pair "`" nil :actions nil)
+
+
+             ;; also only use the pseudo-quote inside strings where it
+             ;; serves as hyperlink.
+             (sp-local-pair "`" "`" :when '(sp-in-string-p sp-in-comment-p))
+             (sp-local-pair "'" "'" :when '(sp-in-string-p sp-in-comment-p)))
+           ))
    #+END_SRC
+
+   That last configuration, makes sure =clojure-mode= files will only pair =`= and ='= if in a comment or a string.
 
 ** Crux
    [[https://github.com/bbatsov/crux][Crux]] is a package containing many useful features, such as opening
@@ -698,7 +720,7 @@
      (use-package company
        :ensure t
        :config (progn
-                 (setq 'company-global-modes '(not eshell-mode))
+                 (setq company-global-modes '(not eshell-mode))
                  (global-company-mode)))
    #+END_SRC
 
@@ -736,7 +758,9 @@
    #+BEGIN_SRC emacs-lisp :exports code :results silent
      (use-package projectile
        :ensure t
-       :config (projectile-global-mode))
+       :config (progn
+                 (setq projectile-create-missing-test-files t)
+                 (projectile-global-mode)))
    #+END_SRC
   
 ** Undo-tree
@@ -840,7 +864,11 @@
                 (define-key org-mode-map (kbd "C-," ) nil)
 
                 ;; Lets start org-mode major mode for every buffer that ends with .org
-                (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode)))
+                (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
+                (setq org-todo-keywords '((sequence "TODO" "|" "IDEA" "DONE")))
+                (setq org-todo-keyword-faces
+                      '(("TODO" . org-warning) ("IDEA" . "Darkolivegreen4")
+                        ("DONE" . (:foreground "DarkSeaGreen"  :weight bold)))))
       :bind (("C-c a"   . org-agenda)
              ("C-x C-n" . org-capture)
              ("\C-cl"   . org-store-link)
@@ -1083,6 +1111,49 @@
 
      (global-set-key (kbd "C-|") 'eshell-here)
    #+END_SRC
+
+   I couldnt get eshell to set up the path. So instead of messing around with eshell for now, 
+   I could simply start a process by invoking =sh -ec "app params"=
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
+     (defun eshell/run (app &rest args)
+       (insert (format "sh -ec \"%s %s\"" app (mapconcat 'identity args " ")))
+       (eshell-send-input))
+   #+END_SRC
+   
+   And lets set up some default enviroment variables
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
+   
+   #+END_SRC
+
+** Manipulating Colors
+   Often when trying to mess around with colors, one might want to make a color ligher or darker. 
+   The following functions are taken from [[http://www.recursivedream.com/blog/2015/incrementally-lightendarken-a-color-in-emacs][this awesome blog post]]:
+
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
+     (defun lighten-color-at-point (&optional pct)
+       (interactive "p")
+       (unless (looking-at-p "#")
+          (re-search-backward "#"))
+       (save-excursion
+         (push-mark nil t t)
+         (let ((dist (skip-chars-forward "#A-Za-z0-9" (+ (point) 7)))
+           (percent (or pct 5)))
+           (insert (apply 'color-rgb-to-hex
+             (apply 'color-hsl-to-rgb
+               (apply 'color-lighten-hsl
+                 (append (apply 'color-rgb-to-hsl
+                   (color-name-to-rgb (buffer-substring-no-properties (mark) (point))))
+                   (list percent))))))
+         (delete-region (region-beginning) (+ (region-beginning) dist)))))
+
+     (defun darken-color-at-point (&optional pct)
+       (interactive "p")
+       (lighten-color-at-point (if (numberp pct) (* pct -1) -5)))
+   #+END_SRC
+   
+   To use it, position `point` inside a color string, such as
+   ="#324d4d"=, and invoke either functions. The string will be
+   replaced to the lighter/darker version of the color. 
 ** Flash executed s-exp
     This should have been eariler in this file, but when it is, I get a weird =Symbol’s value as variable is void: hi=. 
     Tried to look for it, but didnt find anything useful.. Sticking this here for the time being..
