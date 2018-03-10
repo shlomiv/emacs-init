@@ -66,7 +66,7 @@
   the default 800k, we could do at 500GiB, no? ;)
 
    #+BEGIN_SRC emacs-lisp :exports code :results silent
-   (setq gc-cons-threshold 500000000)
+   ;;(setq gc-cons-threshold 500000000)
    #+END_SRC
   
 * Network                                                           :Network:
