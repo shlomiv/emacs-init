@@ -267,7 +267,7 @@
    We like to have a few words highlighted, such as =TODO:=, =BUG:= etc:
    #+BEGIN_SRC emacs-lisp :exports code :results silent
      (defun shlomi/highlight-words ()
-       (font-lock-add-keywords nil '(("\\<\\(FIXME\\|TODO\\|BUG\\):" 1 font-lock-warning-face t))))
+       (font-lock-add-keywords nil '(("\\<\\(FIXME\\|TODO\\|LEARN\\|BUG\\):" 1 font-lock-warning-face t))))
    #+END_SRC
 
    And lets attach this highligher to some modes:
@@ -498,6 +498,17 @@
       (use-package smart-mode-line-powerline-theme
         :ensure t)
     #+END_SRC
+** Folding everywhere
+   When files are large and messy (I am talking to you, ugly json), folding could bring back some sense and structure
+
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
+     (use-package yafolding
+       :ensure t
+       :config (progn)
+       :bind (("S-<tab>" . yafolding-toggle-element))
+     )
+   #+END_SRC
+
 * Emacs-lisp
   Well, =Prelude= is in fact quite a nice emacs distribution, and so I shamelessly grabbed some
   stuff from it! The following functions are from prelude's emacs-lisp module.
@@ -589,6 +600,16 @@
       :ensure t)
   #+END_SRC
 
+* Docker
+  Lets get some docker-mode going on.
+  
+  First, lets set up dockerfile-mode. Later maybe I will setup more docker/docker-tramp stuff
+  #+BEGIN_SRC emacs-lisp :exports code :results silent
+    (use-package dockerfile-mode
+      :ensure t
+      :config (progn
+                (add-to-list 'auto-mode-alist '("Dockerfile\\'" . dockerfile-mode))))
+  #+END_SRC
 * YAML
   Lots of configuations are now days defined as yaml. Lets use that.
   #+BEGIN_SRC emacs-lisp :exports code :results silent
@@ -916,7 +937,18 @@
                 (setq org-todo-keywords '((sequence "TODO" "|" "IDEA" "DONE")))
                 (setq org-todo-keyword-faces
                       '(("TODO" . org-warning) ("IDEA" . "Darkolivegreen4")
-                        ("DONE" . (:foreground "DarkSeaGreen"  :weight bold)))))
+                        ("DONE" . (:foreground "DarkSeaGreen"  :weight bold))))
+
+                (setq org-log-done 'time)
+
+                (setq org-duration-units `(("min" . 1)
+                                    ("h" . 60)
+                                    ("d" . ,(* 60 8))
+                                    ("w" . ,(* 60 8 5))
+                                    ("m" . ,(* 60 8 5 4))
+                                    ("y" . ,(* 60 8 5 4 10))))
+                (org-duration-set-regexps)
+                )
       :bind (("C-c a"   . org-agenda)
              ("C-x C-n" . org-capture)
              ("\C-cl"   . org-store-link)
@@ -934,6 +966,8 @@
    hours.  In previous versions of org-mode I actually had to changfe
    code to achieve this, but now there is an easy customization for it!
 
+   Unfortunatly, the code here does nothing since it runs before org has loaded which overrides this. 
+   Until I find a better way, I also stuck this code at the use-package init function above
    #+BEGIN_SRC emacs-lisp :exports code :results silent
      (setq org-duration-units `(("min" . 1)
                                 ("h" . 60)
@@ -944,6 +978,12 @@
      (org-duration-set-regexps)
    #+END_SRC
 
+** HTML export
+   Lets install htmlize so we could export org-mode files as html
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
+     (use-package htmlize
+       :ensure t)
+   #+END_SRC
 ** Babel
    Babel is a tool that allows you to execute code in any language inside an =org= file, in fact,
    the code blocks used in this file are executed by babel!
@@ -991,7 +1031,7 @@
 *** Configure ditaa
     [[http://ditaa.sourceforge.net/][ditaa]] is a nice ascii-art to image convertor. 
     #+BEGIN_SRC emacs-lisp :exports code :results silent
-    (setq org-ditaa-jar-path "~/org-mode/org-mode/contrib/scripts/ditaa.jar")
+      (setq org-ditaa-jar-path "~/ditaa.jar")
     #+END_SRC
 ** Set up latex export
     - Configure tables export
@@ -1044,7 +1084,7 @@
      (add-to-list 'org-structure-template-alist '("elc" "#+BEGIN_SRC emacs-lisp :exports code :results silent\n?\n#+END_SRC" "<src lang=\"?\">\n\n</src>"))
      (add-to-list 'org-structure-template-alist '("clj" "#+BEGIN_SRC clojure ?\n\n#+END_SRC" "<src lang=\"?\">\n\n</src>"))
      (add-to-list 'org-structure-template-alist '("cljc" "#+BEGIN_SRC clojure :exports code :results silent\n?\n#+END_SRC" "<src lang=\"?\">\n\n</src>"))
-     (add-to-list 'org-structure-template-alist '("shc" "#+BEGIN_SRC sh :exports code :results silent\n?\n#+END_SRC" "<src lang=\"?\">\n\n</src>"))
+     (add-to-list 'org-structure-template-alist '("shc" "#+BEGIN_SRC shell :exports code :results silent\n?\n#+END_SRC" "<src lang=\"?\">\n\n</src>"))
      (add-to-list 'org-structure-template-alist '("t" "#+BEGIN_TIP\n?\n#+END_TIP" "<div class=\"tip\">\n\n</div>"))
      (add-to-list 'org-structure-template-alist '("w" "#+BEGIN_warning\n?\n#+END_warning" "<div class=\"warning\">\n\n</div>"))
      (add-to-list 'org-structure-template-alist '("n" "#+BEGIN_note\n?\n#+END_note" "<div class=\"note\">\n\n</div>"))
