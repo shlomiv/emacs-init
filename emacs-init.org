@@ -278,7 +278,6 @@
      (add-hook 'org-mode-hook 'shlomi/highlight-words)
    #+END_SRC
 
-   
 ** Highlight current line
    #+BEGIN_SRC emacs-lisp :exports code :results silent
    (global-hl-line-mode 1)
@@ -508,7 +507,17 @@
        :bind (("S-<tab>" . yafolding-toggle-element))
      )
    #+END_SRC
-
+** Flyspell popup
+   Flyspell forces your eye to move away from editing position to see the possible corrections. Not only that, but
+   recently the options are shown at the top, which moves the entire buffer position down. Lets fix that with some popups!
+   Lets fyl to the netherlands 
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
+     (use-package flyspell-popup
+       :ensure t
+       :config (progn
+                 (add-hook 'flyspell-mode-hook #'flyspell-popup-auto-correct-mode))
+       :bind (("M-#" . flyspell-popup-correct)))
+   #+END_SRC
 * Emacs-lisp
   Well, =Prelude= is in fact quite a nice emacs distribution, and so I shamelessly grabbed some
   stuff from it! The following functions are from prelude's emacs-lisp module.
@@ -593,11 +602,36 @@
    I would use this, but my god! This imports a gazillion packages!! removed!
    #+END_warning
 
+* Javascript
+  #+BEGIN_SRC emacs-lisp :exports code :results silent
+    (use-package nodejs-repl
+      :ensure t
+      :config (progn
+                (add-hook 'js-mode-hook
+                          (lambda ()
+                            (define-key js-mode-map (kbd "C-c C-e") 'nodejs-repl-send-last-expression)
+                            (define-key js-mode-map (kbd "C-c C-c") 'nodejs-repl-send-line)
+                            (define-key js-mode-map (kbd "C-c C-r") 'nodejs-repl-send-region)
+                            (define-key js-mode-map (kbd "C-c C-l") 'nodejs-repl-load-file)
+                            (define-key js-mode-map (kbd "C-c C-z") 'nodejs-repl-switch-to-repl)))
+                (setq js-indent-level 2)
+              ))
+
+
+    (use-package typescript-mode
+      :ensure t
+      )
+  #+END_SRC
 * Go
   Lets add some go support.
   #+BEGIN_SRC emacs-lisp :exports code :results silent
     (use-package go-mode
-      :ensure t)
+      :ensure t
+      :config (progn (setq-default
+                      indent-tabs-mode nil
+                      tab-width 4
+                      tab-stop-list (quote (4 8))
+                      )))
   #+END_SRC
 
 * Docker
@@ -925,6 +959,7 @@
 
 * Org-mode
   Lets set up org-mode!
+
   #+BEGIN_SRC emacs-lisp :exports code :results silent
     (use-package org
       :config (progn
@@ -940,15 +975,15 @@
                         ("DONE" . (:foreground "DarkSeaGreen"  :weight bold))))
 
                 (setq org-log-done 'time)
-
+                
+                ;; Lets make a day be 8 hours of work, a week be 5 days of work
                 (setq org-duration-units `(("min" . 1)
                                     ("h" . 60)
                                     ("d" . ,(* 60 8))
                                     ("w" . ,(* 60 8 5))
                                     ("m" . ,(* 60 8 5 4))
                                     ("y" . ,(* 60 8 5 4 10))))
-                (org-duration-set-regexps)
-                )
+                (org-duration-set-regexps))
       :bind (("C-c a"   . org-agenda)
              ("C-x C-n" . org-capture)
              ("\C-cl"   . org-store-link)
@@ -984,6 +1019,105 @@
      (use-package htmlize
        :ensure t)
    #+END_SRC
+
+*** HTML Permenant ids for exported titles
+    Following [[https://writequit.org/articles/emacs-org-mode-generate-ids.html][this tutorial]], I found this out:
+
+    #+BEGIN_SRC emacs-lisp :exports code :results silent
+      (defun sanitize (s)
+        (replace-regexp-in-string
+         "[\\\.\/']+" ""
+         (replace-regexp-in-string "\s+" "-" s)))
+
+      (defun org-id-new (&optional prefix)
+        "Create a new globally unique ID.
+
+      An ID consists of two parts separated by a colon:
+      - a prefix
+      - a unique part that will be created according to `org-id-method'.
+
+     P REFIX can specify the prefix, the default is given by the variable
+      `org-id-prefix'.  However, if PREFIX is the symbol `none', don't use any
+      prefix even if `org-id-prefix' specifies one.
+
+      So a typical ID could look like \"Org-4nd91V40HI\"."
+        (let* ((prefix (if (eq prefix 'none)
+                           ""
+                         (concat (or prefix org-id-prefix) "-")))
+               unique)
+          (if (equal prefix "-") (setq prefix ""))
+          (cond
+           ((memq org-id-method '(uuidgen uuid))
+            ;;(setq unique (org-trim (shell-command-to-string org-id-uuid-program)))
+            (setq unique (concat
+                          (sanitize (org-entry-get nil "ITEM"))
+                          "-"
+                          (number-to-string (random 1000))))
+            ;;(unless (org-uuidgen-p unique) (setq unique (org-id-uuid)))
+            )
+           ((eq org-id-method 'org)
+            (let* ((etime (org-reverse-string (org-id-time-to-b36)))
+                   (postfix (if org-id-include-domain
+                                (progn
+                                  (require 'message)
+                                  (concat "@" (message-make-fqdn))))))
+              (setq unique (concat etime postfix))))
+           (t (error "Invalid `org-id-method'")))
+          (concat prefix unique)))
+
+
+
+      (defun eos/org-custom-id-get (&optional pom create prefix)
+        "Get the CUSTOM_ID property of the entry at point-or-marker POM.
+         If POM is nil, refer to the entry at point. If the entry does
+         not have an CUSTOM_ID, the function returns nil. However, when
+         CREATE is non nil, create a CUSTOM_ID if none is present
+         already. PREFIX will be passed through to `org-id-new'. In any
+         case, the CUSTOM_ID of the entry is returned."
+        (interactive)
+        (org-with-point-at pom
+          (let ((id (org-entry-get nil "CUSTOM_ID")))
+            (cond
+             ((and id (stringp id) (string-match "\\S-" id))
+              id)
+             (create
+              (setq id (org-id-new (concat prefix "h")))
+              (org-entry-put pom "CUSTOM_ID" id)
+              (org-id-add-location id (buffer-file-name (buffer-base-buffer)))
+              id)))))
+
+
+      (defun eos/org-add-ids-to-headlines-in-file ()
+        "Add CUSTOM_ID properties to all headlines in the current
+         file which do not already have one. Only adds ids if the
+         `auto-id' option is set to `t' in the file somewhere. ie,
+         ,#+OPTIONS: auto-id:t"
+        (interactive)
+        (save-excursion
+          (widen)
+          (goto-char (point-min))
+          (when (re-search-forward "^#\\+OPTIONS:.*auto-id:t" (point-max) t)
+            (org-map-entries (lambda () (eos/org-custom-id-get (point) 'create))))))
+    #+END_SRC
+
+    Now lets stich that together
+    #+BEGIN_SRC emacs-lisp :exports code :results silent
+      (require 'org-id)
+      (setq org-id-prefix "Org")
+      
+      (setq org-id-link-to-org-use-id 'create-if-interactive-and-no-custom-id)
+      (add-hook 'org-capture-prepare-finalize-hook
+                (lambda () (eos/org-custom-id-get (point) 'create))) 
+
+      (add-hook 'org-mode-hook
+                (lambda ()
+                  (add-hook 'before-save-hook
+                            (lambda ()
+                              (when (and (eq major-mode 'org-mode)
+                                         (eq buffer-read-only nil))
+                                (eos/org-add-ids-to-headlines-in-file))))))
+   #+END_SRC
+
 ** Babel
    Babel is a tool that allows you to execute code in any language inside an =org= file, in fact,
    the code blocks used in this file are executed by babel!
