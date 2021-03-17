@@ -602,6 +602,28 @@
    I would use this, but my god! This imports a gazillion packages!! removed!
    #+END_warning
 
+* Rust
+   #+BEGIN_SRC emacs-lisp :exports code :results silent
+     (use-package lsp-mode
+       :commands lsp
+       :ensure t
+       :hook (rust-mode . lsp)
+       :init (progn
+               (setq lsp-auto-guess-root t)
+               (setq lsp-eldoc-render-all nil)
+               (setq lsp-ui-doc-position (quote at-point))))
+
+
+     (use-package lsp-ui :ensure t)
+
+     (use-package rust-mode :ensure t)
+
+
+     (use-package company-lsp
+       :ensure t
+       :init (push 'company-lsp company-backends))
+#+END_SRC
+
 * Javascript
   #+BEGIN_SRC emacs-lisp :exports code :results silent
     (use-package nodejs-repl
@@ -910,7 +932,7 @@
    [[https://magit.vc/manual/2.7/magit/#Top][Magit]] package adds git support to emacs. 
    #+BEGIN_SRC emacs-lisp :exports code :results silent
      (use-package magit
-       :ensure t
+     :ensure t
        :bind (("C-x g" . magit-status)))
    #+END_SRC
 ** Hippie-expand
@@ -957,7 +979,7 @@
                  (browse-kill-ring-default-keybindings)))
    #+END_SRC
 
-* COMMENT Org-mode
+* Org-mode
   Lets set up org-mode!
 
   #+BEGIN_SRC emacs-lisp :exports code :results silent
@@ -1426,4 +1448,3 @@
         :config (setq eval-sexp-fu-flash-duration 0.5))
     #+END_SRC
     
-
